@@ -1,6 +1,6 @@
 # omnischolar/openalex
 
-OpenAlex for [glitchr/omnischolar](https://github.com/glitchr-studio/omnischolar): a researcher's
+OpenAlex for [omniscient/omnischolar](https://github.com/glitchr-studio/omnischolar): a researcher's
 profile with their counts (works, citations, h-index, i10-index, by year) and the institutions
 seen on their works; their works with abstracts, citation counts and open-access links; any work
 by its OpenAlex id, DOI or PubMed id; a search. No key needed.

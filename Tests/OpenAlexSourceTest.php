@@ -186,4 +186,15 @@ final class OpenAlexSourceTest extends TestCase
         $this->expectException(UnavailableException::class);
         $this->source(new MockResponse('', ['http_code' => 503]))->author('A5108007452');
     }
+
+    /** The throttle every factory takes (SourceFactory): seconds left between two calls. */
+    public function testTheThrottleLeavesItsSeconds(): void
+    {
+        $http = new MockHttpClient(static fn (): MockResponse => new MockResponse((string) file_get_contents(__DIR__.'/Fixtures/work-doi.json')));
+        $source = (new OpenAlexSourceFactory($http))->create(['throttle' => 0.3]);
+        $start = microtime(true);
+        $source->work('doi:10.1039/D4SC04973J');
+        $source->work('doi:10.1039/D4SC04973J');
+        self::assertGreaterThanOrEqual(0.29, microtime(true) - $start);
+    }
 }

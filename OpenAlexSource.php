@@ -61,8 +61,9 @@ final class OpenAlexSource extends HttpSource
         private readonly bool $paratext = false,
         string $baseUri = self::BASE_URI,
         array $headers = [],
+        float $throttle = 0.0,
     ) {
-        parent::__construct($http, $baseUri, $headers);
+        parent::__construct($http, $baseUri, $headers, $throttle);
     }
 
     public function getName(): string

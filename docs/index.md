@@ -40,11 +40,10 @@ contact address (`mailto`).
 | `paratext` | bool | `false` | no | `true` keeps covers, tables of contents and the like; else `is_paratext:false` filters them out |
 | `user_agent` | string | `omnischolar/1.x (+https://github.com/glitchr-omnisense/omnischolar)` and the `mailto` | no | |
 | `base_uri` | string | `https://api.openalex.org/` | no | |
+| `throttle` | float | `0.0` | no | seconds left between two calls of the source |
 
 > [!WARNING]
-> Known defect: `throttle` is not read by this factory (the source has no interval), where every
-> factory is said to take it. And `paratext` is read with PHP's `(bool)`: the string `'false'` is
-> true.
+> Known defect: `paratext` is read with PHP's `(bool)`: the string `'false'` is true.
 
 ## Capabilities
 

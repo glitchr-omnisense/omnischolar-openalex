@@ -15,6 +15,7 @@ use Symfony\Component\HttpClient\HttpClient;
  *     api_key: ~                            # a free key from openalex.org/settings/api: ten times the keyless daily budget
  *     paratext: false                       # true keeps covers, tables of contents and the like
  *     base_uri: 'https://api.openalex.org/'
+ *     throttle: 0                           # seconds between two calls
  */
 final class OpenAlexSourceFactory extends SourceFactory
 {
@@ -38,6 +39,7 @@ final class OpenAlexSourceFactory extends SourceFactory
             (bool) $c->get('paratext'),
             (string) $c->get('base_uri', OpenAlexSource::BASE_URI),
             ['User-Agent' => self::userAgent($c)],
+            (float) $c->get('throttle', 0.0),
         );
     }
 }

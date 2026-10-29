@@ -42,8 +42,8 @@ contact address (`mailto`).
 | `base_uri` | string | `https://api.openalex.org/` | no | |
 | `throttle` | float | `0.0` | no | seconds left between two calls of the source |
 
-> [!WARNING]
-> Known defect: `paratext` is read with PHP's `(bool)`: the string `'false'` is true.
+`paratext` is read as a boolean whatever its spelling (`Config::bool()`): `'false'`, `'0'`, `'no'`
+or `'off'` keeps the filter, a value that is no boolean is an `InvalidConfigException`.
 
 ## Capabilities
 

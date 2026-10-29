@@ -117,6 +117,23 @@ final class OpenAlexSourceTest extends TestCase
         self::assertSame('A5108007452', $nakatani->identifiers->value(Scheme::OPENALEX));
     }
 
+    /**
+     * paratext as a site's YAML or environment gives it, a string: "false" (or "0", "no", "off")
+     * keeps the filter, "true" drops it; a value that is no boolean is a configuration error.
+     */
+    public function testParatextReadAsABooleanWhateverItsSpelling(): void
+    {
+        foreach (['false' => true, '0' => true, 'no' => true, 'off' => true, 'true' => false, '1' => false, 'yes' => false] as $value => $filtered) {
+            $this->calls = [];
+            $this->source(null, ['mailto' => 'support@glitchr.io', 'paratext' => (string) $value])->works('A5108007452', new Query(from: 2024, to: 2024));
+            self::assertSame($filtered, str_contains($this->calls[0][1]['filter'], 'is_paratext:false'), "paratext: '$value'");
+        }
+
+        $this->expectException(\Omnischolar\Exception\InvalidConfigException::class);
+        $this->expectExceptionMessage('paratext');
+        $this->source(null, ['mailto' => 'support@glitchr.io', 'paratext' => 'maybe']);
+    }
+
     public function testThePagesFollowTheCursor(): void
     {
         $source = $this->source();

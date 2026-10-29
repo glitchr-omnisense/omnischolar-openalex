@@ -36,7 +36,7 @@ final class OpenAlexSourceFactory extends SourceFactory
             $this->http ?? HttpClient::create(),
             $c->get('mailto'),
             $c->get('api_key'),
-            (bool) $c->get('paratext'),
+            $c->bool('paratext'),
             (string) $c->get('base_uri', OpenAlexSource::BASE_URI),
             ['User-Agent' => self::userAgent($c)],
             (float) $c->get('throttle', 0.0),

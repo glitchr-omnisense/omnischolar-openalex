@@ -1,0 +1,59 @@
+{
+    "$schema": "https://github.com/glitchr-omnisense/contracts/blob/1.x/resources/usage-policy.schema.json",
+    "provider": "openalex",
+    "rateLimits": [
+        {
+            "max": 10,
+            "window": "second",
+            "scope": "application",
+            "operations": [],
+            "note": "Without a key. With a free key or prepaid usage: 30 a second; annual plan: 50. Semantic search: 1 a second; searches with more than 5 boolean operators: 1 a second keyless (5 with a key, 25 annual)."
+        },
+        {
+            "max": 1000,
+            "window": "day",
+            "scope": "application",
+            "operations": [],
+            "unit": "units",
+            "cost": {
+                "entity": 0,
+                "list": 1,
+                "search": 10
+            },
+            "note": "The keyless daily budget, $0.10 a day (help.openalex.org/access/example-costs), sent as x-ratelimit-limit: 1000 credits (x-ratelimit-limit-usd 0.1). A call costs: single entity by ID or DOI free, list + filter 1 credit ($0.0001), search 10 credits ($0.001), semantic search $0.001, content download $0.01. Resets at midnight UTC. A free key: $1 a day (10x, 10000 credits)."
+        }
+    ],
+    "concurrency": null,
+    "rights": {
+        "commercial": "allowed",
+        "openSourceRequired": null,
+        "caching": {
+            "permission": "allowed",
+            "maxTtl": null
+        },
+        "storage": "allowed",
+        "redistribution": "allowed",
+        "attribution": {
+            "required": false,
+            "text": null,
+            "url": null,
+            "where": []
+        },
+        "licence": "CC0-1.0"
+    },
+    "requirements": {
+        "key": false,
+        "userAgent": {
+            "required": false,
+            "pattern": null
+        }
+    },
+    "provenance": {
+        "terms": "https://help.openalex.org/access/pricing/",
+        "policy": "https://help.openalex.org/how-to-use-the-api/rate-limits-and-authentication",
+        "verifiedAt": "2026-11-10",
+        "declaredBy": "maintainer",
+        "contact": "sales@openalex.org",
+        "notes": "Read on 2026-11-10: rate-limits-and-authentication, pricing ('records are released under a CC0 public-domain license'), example-costs and the API overview ('all data is CC0'). No key needed for basic use; a free key (api_key parameter) gives 10x the daily budget, usage tracking and cursor paging beyond the first page; a new account spends its first $1 at up to $0.10 every 5 minutes. The pages no longer mention a mailto / polite pool. A test call returned x-ratelimit-limit 1000, x-ratelimit-cost-usd 0.0001 and x-ratelimit-credits-used 1 for a list call. per_page max 100, basic paging up to 10000 results."
+    }
+}

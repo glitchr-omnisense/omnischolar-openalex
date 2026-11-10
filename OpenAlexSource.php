@@ -17,6 +17,7 @@ use Omnischolar\Source\Capability;
 use Omnischolar\Source\HttpSource;
 use Omnischolar\Source\Page;
 use Omnischolar\Source\Query;
+use Omnisense\Contracts\Policy\UsagePolicy;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -64,6 +65,40 @@ final class OpenAlexSource extends HttpSource
         float $throttle = 0.0,
     ) {
         parent::__construct($http, $baseUri, $headers, $throttle);
+    }
+
+    /**
+     * OpenAlex's figures without a key (policy.json); with one, 30 requests a
+     * second and a daily budget ten times larger (10,000 credits), as its
+     * rate-limits page said on 2026-11-10. The costs stay: a single entity
+     * free, a list 1 credit, a search 10.
+     */
+    public function usagePolicy(): UsagePolicy
+    {
+        $declared = parent::usagePolicy();
+        if (null === $this->apiKey || '' === $this->apiKey) {
+            return $declared;
+        }
+
+        return UsagePolicy::fromArray(array_replace($declared->toArray(), [
+            'rateLimits' => [
+                ['max' => 30, 'window' => 'second', 'scope' => 'key', 'note' => 'With a key.'],
+                ['max' => 10000, 'window' => 'day', 'scope' => 'key', 'unit' => 'units', 'cost' => ['entity' => 0, 'list' => 1, 'search' => 10], 'note' => 'With a free key: $1 a day.'],
+            ],
+        ]));
+    }
+
+    /** What a request costs OpenAlex's budget: "entity" (one by its id, free), "search" (a search= query), "list" (a filtered list). */
+    protected function operation(string $method, string $url): string
+    {
+        $path = (string) parse_url($url, \PHP_URL_PATH);
+        parse_str((string) parse_url($url, \PHP_URL_QUERY), $query);
+
+        return match (true) {
+            (bool) preg_match('~^/?[a-z]+/[^/]+$~', $path) => 'entity',
+            isset($query['search']) && '' !== $query['search'] => 'search',
+            default => 'list',
+        };
     }
 
     public function getName(): string

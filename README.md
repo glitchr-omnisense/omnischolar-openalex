@@ -25,6 +25,18 @@ omnischolar:
 
 See [docs/](docs/index.md) for what is read, how it maps, and what OpenAlex does not give.
 
+## Usage policy
+
+Declared as data in [`policy.json`](policy.json) (read at https://help.openalex.org/how-to-use-the-api/rate-limits-and-authentication on 2026-11-10), and honoured on every request by the
+core: a limit reached waits when its window ends within `max_wait` seconds, else the request is not
+sent ([Usage policies](https://github.com/glitchr-omnisense/omnischolar/blob/1.x/docs/policies.md)).
+
+- Limits: 10 a second; 1,000 units a day.
+- Licence: CC0-1.0; commercial use: allowed.
+- Credit: not required.
+- Needs: nothing.
+- A request counts as `entity` (free under the daily budget), `list` (1 credit) or `search` (10 credits); with an `api_key`: 30 a second and 10,000 credits a day (`OpenAlexSource::usagePolicy()`).
+
 ## Responsibility
 
 This package is an independent, unofficial client: it is not affiliated with, endorsed by or

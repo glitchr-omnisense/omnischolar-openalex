@@ -7,9 +7,9 @@ by its OpenAlex id, DOI or PubMed id; a search. No key needed.
 
 ```php
 $openalex = (new OpenAlexSourceFactory($http))->create(['mailto' => 'support@glitchr.io']);
-$openalex->author('A5108007452')->metrics->hIndex;                      // 51
-$openalex->works('A5108007452', new Query(from: 2024, to: 2024));       // a Page of Work
-$openalex->work('10.1039/d4sc04973j');
+$openalex->author('A5046427077')->metrics->hIndex;                      // 64
+$openalex->works('A5046427077', new Query(from: 2022, to: 2022));       // a Page of Work
+$openalex->work('10.1140/epjd/s10053-022-00549-6');
 ```
 
 ```yaml

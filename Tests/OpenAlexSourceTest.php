@@ -20,15 +20,16 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
 /**
- * Fixtures recorded from api.openalex.org on 2026-10-04 (Keitaro Nakatani,
- * A5108007452): author.json (authors/A5108007452), works-2024.json
- * (works?filter=author.id:A5108007452,publication_year:2024-2024,is_paratext:false),
+ * Fixtures recorded from api.openalex.org on 2026-11-13, without a key (Alain
+ * Aspect, A5046427077): author.json (authors/A5046427077), works-2022.json
+ * (works?filter=author.id:A5046427077,publication_year:2022-2022,is_paratext:false),
  * works-page1.json and works-page2.json (the first two pages of 25, newest
- * first, by cursor), work-doi.json (works/doi:10.1039/d4sc04973j).
+ * first: the first by cursor, the second by page number), work-doi.json
+ * (works/doi:10.1140/epjd/s10053-022-00549-6).
  */
 final class OpenAlexSourceTest extends TestCase
 {
-    private const NEXT = 'IlsxNDUzOTM5MjAwMDAwLCA5OC4wLCAyNCwgJ2h0dHBzOi8vb3BlbmFsZXgub3JnL1c0MjM1MTg3MzUwJ10i';
+    private const NEXT = 'IlsxNTczMDg0ODAwMDAwLCA5OC4wLCAzMywgJ2h0dHBzOi8vb3BlbmFsZXgub3JnL1cyOTQwNzE0ODE3J10i';
 
     /** @var list<array{string, array<string, string>}> */
     private array $calls = [];
@@ -44,13 +45,13 @@ final class OpenAlexSourceTest extends TestCase
             }
             $filter = \is_string($query['filter'] ?? null) ? $query['filter'] : '';
             $fixture = match (true) {
-                '/authors/A5108007452' === $path, '/authors/orcid:0009-0005-1387-7295' === $path => 'author.json',
-                '/works/doi:10.1039/d4sc04973j' === $path => 'work-doi.json',
-                '/works' === $path && str_contains($filter, 'publication_year:2024-2024') => 'works-2024.json',
-                '/works' === $path && str_contains($filter, 'author.id:A5108007452') && '*' === ($query['cursor'] ?? null) => 'works-page1.json',
+                '/authors/A5046427077' === $path, '/authors/orcid:0000-0003-0094-5584' === $path => 'author.json',
+                '/works/doi:10.1140/epjd/s10053-022-00549-6' === $path => 'work-doi.json',
+                '/works' === $path && str_contains($filter, 'publication_year:2022-2022') => 'works-2022.json',
+                '/works' === $path && str_contains($filter, 'author.id:A5046427077') && '*' === ($query['cursor'] ?? null) => 'works-page1.json',
                 '/works' === $path && self::NEXT === ($query['cursor'] ?? null) => 'works-page2.json',
-                '/works' === $path && str_contains($filter, 'author.id:A5108007452') && '1' === ($query['page'] ?? null) => 'works-page1.json',
-                '/works' === $path && str_contains($filter, 'author.id:A5108007452') && \in_array($query['page'] ?? null, ['2', '12'], true) => 'works-page2.json',
+                '/works' === $path && str_contains($filter, 'author.id:A5046427077') && '1' === ($query['page'] ?? null) => 'works-page1.json',
+                '/works' === $path && str_contains($filter, 'author.id:A5046427077') && \in_array($query['page'] ?? null, ['2', '26'], true) => 'works-page2.json',
                 default => null,
             };
 
@@ -62,24 +63,24 @@ final class OpenAlexSourceTest extends TestCase
 
     public function testTheProfileWithItsCountsAndInstitutions(): void
     {
-        $author = $this->source()->author('A5108007452');
+        $author = $this->source()->author('A5046427077');
 
-        self::assertSame('Keitaro Nakatani', $author->name);
-        self::assertSame('0009-0005-1387-7295', $author->orcid());
-        self::assertSame('A5108007452', $author->identifiers->value(Scheme::OPENALEX));
-        self::assertSame(288, $author->metrics->works);
-        self::assertSame(51, $author->metrics->hIndex);
-        self::assertSame(134, $author->metrics->i10Index);
-        self::assertSame(9335, $author->metrics->citations);
-        self::assertSame(['works' => 3, 'citations' => 23], $author->metrics->byYear[1988]);
-        self::assertContains('Nakatani, K.', $author->alternativeNames);
-        self::assertSame('Photochromic and Fluorescence Chemistry', $author->keywords[0]);
+        self::assertSame('Alain Aspect', $author->name);
+        self::assertSame('0000-0003-0094-5584', $author->orcid());
+        self::assertSame('A5046427077', $author->identifiers->value(Scheme::OPENALEX));
+        self::assertSame(686, $author->metrics->works);
+        self::assertSame(64, $author->metrics->hIndex);
+        self::assertSame(173, $author->metrics->i10Index);
+        self::assertSame(28400, $author->metrics->citations);
+        self::assertSame(['works' => 25, 'citations' => 1185], $author->metrics->byYear[2016]);
+        self::assertContains('Aspect, A.', $author->alternativeNames);
+        self::assertSame('Cold Atom Physics and Bose-Einstein Condensates', $author->keywords[0]);
 
-        $ens = array_values(array_filter($author->affiliations, static fn (Affiliation $a) => str_contains($a->organization, 'Paris-Saclay') && str_starts_with($a->organization, 'École')))[0];
-        self::assertSame(Affiliation::OBSERVED, $ens->kind);
-        self::assertTrue($ens->isCurrent(), 'a last known institution');
-        self::assertSame('1994', $ens->start);
-        self::assertSame('https://ror.org/00hx6zz33', $ens->ror);
+        $iogs = array_values(array_filter($author->affiliations, static fn (Affiliation $a) => str_contains($a->organization, 'Optique Graduate School')))[0];
+        self::assertSame(Affiliation::OBSERVED, $iogs->kind);
+        self::assertTrue($iogs->isCurrent(), 'a last known institution');
+        self::assertSame('1970', $iogs->start);
+        self::assertSame('https://ror.org/00d0rke27', $iogs->ror);
         self::assertSame('FR', $author->country);
 
         self::assertSame('support@glitchr.io', $this->calls[0][1]['mailto'], 'the polite pool');
@@ -88,35 +89,35 @@ final class OpenAlexSourceTest extends TestCase
 
     public function testAnOrcidNamesTheAuthorToo(): void
     {
-        self::assertSame('Keitaro Nakatani', $this->source()->author(Identifier::orcid('0009-0005-1387-7295'))->name);
-        self::assertSame('/authors/orcid:0009-0005-1387-7295', $this->calls[0][0]);
+        self::assertSame('Alain Aspect', $this->source()->author(Identifier::orcid('0000-0003-0094-5584'))->name);
+        self::assertSame('/authors/orcid:0000-0003-0094-5584', $this->calls[0][0]);
     }
 
-    public function testThe2024ArticlesAreThere(): void
+    public function testThe2022ArticlesAreThere(): void
     {
-        $page = $this->source()->works('A5108007452', new Query(from: 2024, to: 2024));
+        $page = $this->source()->works('A5046427077', new Query(from: 2022, to: 2022));
 
-        self::assertSame(4, $page->total);
+        self::assertSame(6, $page->total);
         self::assertTrue($page->isLast());
         $venues = array_map(static fn (Work $w) => $w->venue?->name, $page->works);
-        self::assertContains('Chemical Science', $venues);
-        self::assertContains('ACS Applied Materials & Interfaces', $venues);
-        self::assertSame('author.id:A5108007452,publication_year:2024-2024,is_paratext:false', $this->calls[0][1]['filter']);
+        self::assertContains('The European Physical Journal D', $venues);
+        self::assertContains('Physical Review A', $venues);
+        self::assertSame('author.id:A5046427077,publication_year:2022-2022,is_paratext:false', $this->calls[0][1]['filter']);
         self::assertSame('publication_date:desc', $this->calls[0][1]['sort']);
 
-        $acid = array_values(array_filter($page->works, static fn (Work $w) => '10.1039/d4sc04973j' === $w->doi()))[0];
-        self::assertSame('Acid-sensitive photoswitches: towards catalytic on-demand release of stored light energy', $acid->title);
-        self::assertSame(WorkType::ARTICLE, $acid->type);
-        self::assertSame(2024, $acid->year);
-        self::assertSame(['2041-6520', '2041-6539'], $acid->venue->issn);
-        self::assertSame('15', $acid->volume);
-        self::assertSame('39', $acid->issue);
-        self::assertSame('16034-16039', $acid->pages);
-        self::assertTrue($acid->openAccess);
-        self::assertNotNull($acid->identifiers->value(Scheme::OPENALEX));
-        self::assertSame('openalex', $acid->source);
-        $nakatani = array_values(array_filter($acid->authors, static fn ($c) => 'Nakatani' === $c->familyName()))[0];
-        self::assertSame('A5108007452', $nakatani->identifiers->value(Scheme::OPENALEX));
+        $speckle = array_values(array_filter($page->works, static fn (Work $w) => '10.1140/epjd/s10053-022-00549-6' === $w->doi()))[0];
+        self::assertSame('Bichromatic state-dependent disordered potential for Anderson localization of ultracold atoms', $speckle->title);
+        self::assertSame(WorkType::ARTICLE, $speckle->type);
+        self::assertSame(2022, $speckle->year);
+        self::assertSame(['1434-6060', '1434-6079'], $speckle->venue->issn);
+        self::assertSame('76', $speckle->volume);
+        self::assertSame('11', $speckle->issue);
+        self::assertSame('218', $speckle->pages);
+        self::assertTrue($speckle->openAccess);
+        self::assertNotNull($speckle->identifiers->value(Scheme::OPENALEX));
+        self::assertSame('openalex', $speckle->source);
+        $aspect = array_values(array_filter($speckle->authors, static fn ($c) => 'Aspect' === $c->familyName()))[0];
+        self::assertSame('A5046427077', $aspect->identifiers->value(Scheme::OPENALEX));
     }
 
     /**
@@ -127,7 +128,7 @@ final class OpenAlexSourceTest extends TestCase
     {
         foreach (['false' => true, '0' => true, 'no' => true, 'off' => true, 'true' => false, '1' => false, 'yes' => false] as $value => $filtered) {
             $this->calls = [];
-            $this->source(null, ['mailto' => 'support@glitchr.io', 'paratext' => (string) $value])->works('A5108007452', new Query(from: 2024, to: 2024));
+            $this->source(null, ['mailto' => 'support@glitchr.io', 'paratext' => (string) $value])->works('A5046427077', new Query(from: 2022, to: 2022));
             self::assertSame($filtered, str_contains($this->calls[0][1]['filter'], 'is_paratext:false'), "paratext: '$value'");
         }
 
@@ -139,13 +140,13 @@ final class OpenAlexSourceTest extends TestCase
     public function testWithAKeyThePagesFollowTheCursor(): void
     {
         $source = $this->source(null, ['mailto' => 'support@glitchr.io', 'api_key' => 'not-a-real-key']);
-        $first = $source->works('A5108007452', new Query(limit: 25));
+        $first = $source->works('A5046427077', new Query(limit: 25));
         self::assertCount(25, $first);
         self::assertSame(self::NEXT, $first->next);
         self::assertSame('*', $this->calls[0][1]['cursor']);
         self::assertSame('25', $this->calls[0][1]['per-page']);
 
-        $second = $source->works('A5108007452', new Query(limit: 25, cursor: $first->next));
+        $second = $source->works('A5046427077', new Query(limit: 25, cursor: $first->next));
         self::assertCount(25, $second);
         self::assertSame(self::NEXT, $this->calls[1][1]['cursor']);
         self::assertNotSame($first->works[0]->title, $second->works[0]->title);
@@ -159,34 +160,34 @@ final class OpenAlexSourceTest extends TestCase
     public function testWithoutAKeyThePagesAreNumbered(): void
     {
         $source = $this->source();
-        $first = $source->works('A5108007452', new Query(limit: 25));
+        $first = $source->works('A5046427077', new Query(limit: 25));
         self::assertCount(25, $first);
         self::assertSame('page:2', $first->next);
-        self::assertSame(286, $first->total);
+        self::assertSame(641, $first->total);
         self::assertSame('1', $this->calls[0][1]['page']);
         self::assertArrayNotHasKey('cursor', $this->calls[0][1]);
         self::assertSame('25', $this->calls[0][1]['per-page']);
 
-        $second = $source->works('A5108007452', new Query(limit: 25, cursor: $first->next));
+        $second = $source->works('A5046427077', new Query(limit: 25, cursor: $first->next));
         self::assertCount(25, $second);
         self::assertSame('2', $this->calls[1][1]['page']);
         self::assertArrayNotHasKey('cursor', $this->calls[1][1]);
         self::assertSame('page:3', $second->next);
         self::assertNotSame($first->works[0]->title, $second->works[0]->title);
 
-        $last = $source->works('A5108007452', new Query(limit: 25, cursor: 'page:12'));
+        $last = $source->works('A5046427077', new Query(limit: 25, cursor: 'page:26'));
         self::assertCount(25, $last);
-        self::assertNull($last->next, 'the 286 works end on the twelfth page of 25');
+        self::assertNull($last->next, 'the 641 works end on the twenty-sixth page of 25');
     }
 
     public function testAWorkByItsDoi(): void
     {
-        $work = $this->source()->work('https://doi.org/10.1039/D4SC04973J');
+        $work = $this->source()->work('https://doi.org/10.1140/EPJD/S10053-022-00549-6');
 
-        self::assertSame('10.1039/d4sc04973j', $work->doi());
-        self::assertSame('Chemical Science', $work->venue->name);
-        self::assertSame('/works/doi:10.1039/d4sc04973j', $this->calls[0][0]);
-        self::assertNull($this->source()->work('10.1039/unknown'), 'a 404 is unknown');
+        self::assertSame('10.1140/epjd/s10053-022-00549-6', $work->doi());
+        self::assertSame('The European Physical Journal D', $work->venue->name);
+        self::assertSame('/works/doi:10.1140/epjd/s10053-022-00549-6', $this->calls[0][0]);
+        self::assertNull($this->source()->work('10.1140/unknown'), 'a 404 is unknown');
     }
 
     public function testAbstractsAreRebuilt(): void
@@ -199,35 +200,35 @@ final class OpenAlexSourceTest extends TestCase
     {
         self::assertContains(Capability::METRICS, $this->source()->capabilities());
         $this->expectException(NotSupportedException::class);
-        $this->source()->works('Keitaro Nakatani');
+        $this->source()->works('Alain Aspect');
     }
 
     public function testDomainsAreRefused(): void
     {
         $this->expectException(NotSupportedException::class);
-        $this->source()->search(new Query(text: 'photochromism', domains: ['shs.droit']));
+        $this->source()->search(new Query(text: 'Anderson localization', domains: ['shs.droit']));
     }
 
     public function testTheKeyAndTheSearch(): void
     {
-        $this->source(new MockResponse('{"meta":{"count":0},"results":[]}'), ['api_key' => 'k3y'])->search(new Query(text: 'photochromic', author: 'Nakatani', types: [WorkType::ARTICLE], sort: Query::RELEVANCE));
+        $this->source(new MockResponse('{"meta":{"count":0},"results":[]}'), ['api_key' => 'k3y'])->search(new Query(text: 'ultracold atoms', author: 'Aspect', types: [WorkType::ARTICLE], sort: Query::RELEVANCE));
         [, $query] = $this->calls[0];
         self::assertSame('k3y', $query['api_key']);
-        self::assertSame('photochromic', $query['search']);
+        self::assertSame('ultracold atoms', $query['search']);
         self::assertSame('relevance_score:desc', $query['sort']);
-        self::assertSame('raw_author_name.search:Nakatani,type:article|review|letter,is_paratext:false', $query['filter']);
+        self::assertSame('raw_author_name.search:Aspect,type:article|review|letter,is_paratext:false', $query['filter']);
     }
 
     public function testErrors(): void
     {
         try {
-            $this->source(new MockResponse('{}', ['http_code' => 429, 'response_headers' => ['retry-after' => '30']]))->author('A5108007452');
+            $this->source(new MockResponse('{}', ['http_code' => 429, 'response_headers' => ['retry-after' => '30']]))->author('A5046427077');
             self::fail();
         } catch (RateLimitedException $e) {
             self::assertSame(30, $e->retryAfter);
         }
         $this->expectException(UnavailableException::class);
-        $this->source(new MockResponse('', ['http_code' => 503]))->author('A5108007452');
+        $this->source(new MockResponse('', ['http_code' => 503]))->author('A5046427077');
     }
 
     /** The throttle every factory takes (SourceFactory): seconds left between two calls. */
@@ -236,8 +237,8 @@ final class OpenAlexSourceTest extends TestCase
         $http = new MockHttpClient(static fn (): MockResponse => new MockResponse((string) file_get_contents(__DIR__.'/Fixtures/work-doi.json')));
         $source = (new OpenAlexSourceFactory($http))->create(['throttle' => 0.3]);
         $start = microtime(true);
-        $source->work('doi:10.1039/D4SC04973J');
-        $source->work('doi:10.1039/D4SC04973J');
+        $source->work('doi:10.1140/EPJD/S10053-022-00549-6');
+        $source->work('doi:10.1140/EPJD/S10053-022-00549-6');
         self::assertGreaterThanOrEqual(0.29, microtime(true) - $start);
     }
 }

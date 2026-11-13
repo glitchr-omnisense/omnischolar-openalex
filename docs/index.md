@@ -105,23 +105,24 @@ $openalex = (new OpenAlexSourceFactory(HttpClient::create()))->create([
     'api_key' => getenv('OPENALEX_API_KEY') ?: null,
 ]);
 
-$a = $openalex->author('A5108007452');
+$a = $openalex->author('A5046427077');
 echo $a->name, ': ', $a->metrics->works, ' works, ', $a->metrics->citations, ' citations, h-index ', $a->metrics->hIndex, ', ORCID ', $a->orcid(), "\n";
-foreach ($openalex->works('A5108007452', new Query(from: 2024, to: 2024)) as $work) {
+foreach ($openalex->works('A5046427077', new Query(from: 2022, to: 2022)) as $work) {
     printf("  %s  %-10s %s - %s cited %d\n", $work->date, $work->type->value, mb_substr($work->fullTitle(), 0, 80), $work->venue?->name, $work->citations);
 }
 ```
 
 ```
-Keitaro Nakatani: 387 works, 9717 citations, h-index 53, ORCID 0009-0005-1387-7295
-  2024-10-04  article    Complete kinetic and photochemical characterization of the multi-step photochrom - Physical Chemistry Chemical Physics cited 1
-  2024-09-25  article    Cascade Fluorescence Modulation in Photochromic Microcapsules - ACS Applied Materials & Interfaces cited 5
-  2024-09-03  article    Tuning the Thermal Stability of Tetra ‐ o– chloroazobenzene Derivatives by Trans - Chemistry - A European Journal cited 7
-  2024-01-01  article    Acid-sensitive photoswitches: towards catalytic on-demand release of stored ligh - Chemical Science cited 8
+Alain Aspect: 686 works, 28400 citations, h-index 64, ORCID 0000-0003-0094-5584
+  2022-11-01  article    Bichromatic state-dependent disordered potential for Anderson localization of ul - The European Physical Journal D cited 6
+  2022-08-25  preprint   Full counting statistics of interacting lattice gases after an expansion: quanti - HAL cited 0
+  2022-08-25  conference Towards the 3D Anderson Transition with Ultracold Atoms in Bichromatic Speckles - HAL cited 0
+  2022-07-28  preprint   Full counting statistics of interacting lattice gases after an expansion: The ro - arXiv (Cornell University) cited 4
+  2022-04-19  conference Towards the study of 3D Anderson transition by using a two-wavelength speckle di - HAL cited 0
+  2022-02-14  article    Spectral functions and localization-landscape theory in speckle potentials - Physical Review A cited 15
 ```
 
-(called live on 2026-10-26 at 14:18 UTC, from the core's harness image, without a `mailto` or a
-key; the last work, known by its year, dated January 1st)
+(the answers recorded from api.openalex.org on 2026-11-13, without a key, that the tests read)
 
 In Symfony:
 
@@ -144,9 +145,9 @@ omnischolar:
 ## Verified, and not
 
 Tested offline: `Tests/OpenAlexSourceTest.php` (10 tests), on `MockHttpClient` with answers
-recorded on 2026-10-04 (Keitaro Nakatani, A5108007452): his profile, his 2024 works, the first two
-pages of his works, a work by DOI. Called live on 2026-10-04, 2026-10-05 and 2026-10-26 (the
-example above, and the core's [first script](https://github.com/glitchr-omnisense/omnischolar/blob/1.x/docs/installation.md)).
+recorded on 2026-11-13 (Alain Aspect, A5046427077): his profile, his 2022 works, the first two
+pages of his works, a work by DOI. Called live on 2026-10-04, 2026-10-05, 2026-10-26 and 2026-11-13
+(the recordings; and the core's [first script](https://github.com/glitchr-omnisense/omnischolar/blob/1.x/docs/installation.md)).
 Not run with an `api_key`.
 
 ## Responsibility

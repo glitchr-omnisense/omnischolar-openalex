@@ -8,7 +8,7 @@ any work by its OpenAlex id, DOI or PubMed id; a search. The source calls OpenAl
 | Operation | Request |
 |---|---|
 | `author($id)` | `GET https://api.openalex.org/authors/<A...>` or `authors/orcid:<orcid>` |
-| `works($author)` | `GET .../works?filter=author.id:<A...>` (or `author.orcid:`)`,...&sort=&per-page=&cursor=&select=` |
+| `works($author)` | `GET .../works?filter=author.id:<A...>` (or `author.orcid:`)`,...&sort=&per-page=&page=&select=` without a key, `&cursor=` with one |
 | `work($id)` | `GET .../works/<W...>`, `works/doi:<doi>`, `works/pmid:<id>`, `works/pmcid:<id>` |
 | `search($query)` | `GET .../works?search=<text>&filter=title.search:...,raw_author_name.search:...` |
 
@@ -66,7 +66,10 @@ OpenAlex's types for each kind (`article`, `review`, `letter`; `book`; `book-cha
 `retraction`, `paratext`; `other`, `libguides`); `openAccess` → `open_access.is_oa`; `domains` is
 refused. `sort`: `oldest` → `publication_date:asc`, `cited` → `cited_by_count:desc`, `relevance`
 → `relevance_score:desc` with a text (else newest), any other → `publication_date:desc`.
-`per-page` = `limit` 1 to 100; the cursor is OpenAlex's (`*` first, `next_cursor` after);
+`per-page` = `limit` 1 to 100. With a key, the cursor is OpenAlex's (`*` first, `next_cursor` after);
+without one, OpenAlex refuses a cursor past the first page (401, "API key required for cursor paging",
+seen on 2026-11-13), so the pages are numbered (`page=1, 2...`, OpenAlex's basic paging, which
+reaches the first 10,000 results) and `Page::$next` is `page:2`, `page:3`... - the same `Query::$cursor` either way;
 `Page::$total` is `meta.count`. Only the fields the models read are asked (`select`).
 
 **An author.** The display name and its alternatives, OpenAlex id and ORCID; `Metrics` (works,

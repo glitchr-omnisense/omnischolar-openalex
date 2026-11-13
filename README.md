@@ -25,6 +25,14 @@ omnischolar:
 
 See [docs/](docs/index.md) for what is read, how it maps, and what OpenAlex does not give.
 
+## Install
+
+```sh
+composer require omnischolar/openalex
+```
+
+It brings the family's core, `omnisense/omnischolar`, and `omnisense/contracts` with it. No account and no key; a `mailto` of yours, sent with every call as OpenAlex asks (a free key raises the daily budget; [`policy.json`](policy.json)). `$http` is `HttpClient::create()` in plain PHP.
+
 ## Usage policy
 
 Declared as data in [`policy.json`](policy.json) (read at https://help.openalex.org/how-to-use-the-api/rate-limits-and-authentication on 2026-11-10), and honoured on every request by the

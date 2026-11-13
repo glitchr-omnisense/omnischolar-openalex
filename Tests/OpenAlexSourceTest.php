@@ -42,13 +42,15 @@ final class OpenAlexSourceTest extends TestCase
             if ($response) {
                 return $response;
             }
-            $filter = $query['filter'] ?? '';
+            $filter = \is_string($query['filter'] ?? null) ? $query['filter'] : '';
             $fixture = match (true) {
                 '/authors/A5108007452' === $path, '/authors/orcid:0009-0005-1387-7295' === $path => 'author.json',
                 '/works/doi:10.1039/d4sc04973j' === $path => 'work-doi.json',
                 '/works' === $path && str_contains($filter, 'publication_year:2024-2024') => 'works-2024.json',
                 '/works' === $path && str_contains($filter, 'author.id:A5108007452') && '*' === ($query['cursor'] ?? null) => 'works-page1.json',
                 '/works' === $path && self::NEXT === ($query['cursor'] ?? null) => 'works-page2.json',
+                '/works' === $path && str_contains($filter, 'author.id:A5108007452') && '1' === ($query['page'] ?? null) => 'works-page1.json',
+                '/works' === $path && str_contains($filter, 'author.id:A5108007452') && \in_array($query['page'] ?? null, ['2', '12'], true) => 'works-page2.json',
                 default => null,
             };
 
@@ -134,9 +136,9 @@ final class OpenAlexSourceTest extends TestCase
         $this->source(null, ['mailto' => 'support@glitchr.io', 'paratext' => 'maybe']);
     }
 
-    public function testThePagesFollowTheCursor(): void
+    public function testWithAKeyThePagesFollowTheCursor(): void
     {
-        $source = $this->source();
+        $source = $this->source(null, ['mailto' => 'support@glitchr.io', 'api_key' => 'not-a-real-key']);
         $first = $source->works('A5108007452', new Query(limit: 25));
         self::assertCount(25, $first);
         self::assertSame(self::NEXT, $first->next);
@@ -151,6 +153,30 @@ final class OpenAlexSourceTest extends TestCase
         $all = [...$first->works, ...$second->works];
         self::assertNotEmpty(array_filter($all, static fn (Work $w) => WorkType::CHAPTER === $w->type), 'book chapters');
         self::assertNotEmpty(array_filter($all, static fn (Work $w) => null !== $w->abstract), 'abstracts rebuilt from the inverted index');
+    }
+
+    /** Without a key OpenAlex refuses a cursor past the first page (401, "API key required for cursor paging"). */
+    public function testWithoutAKeyThePagesAreNumbered(): void
+    {
+        $source = $this->source();
+        $first = $source->works('A5108007452', new Query(limit: 25));
+        self::assertCount(25, $first);
+        self::assertSame('page:2', $first->next);
+        self::assertSame(286, $first->total);
+        self::assertSame('1', $this->calls[0][1]['page']);
+        self::assertArrayNotHasKey('cursor', $this->calls[0][1]);
+        self::assertSame('25', $this->calls[0][1]['per-page']);
+
+        $second = $source->works('A5108007452', new Query(limit: 25, cursor: $first->next));
+        self::assertCount(25, $second);
+        self::assertSame('2', $this->calls[1][1]['page']);
+        self::assertArrayNotHasKey('cursor', $this->calls[1][1]);
+        self::assertSame('page:3', $second->next);
+        self::assertNotSame($first->works[0]->title, $second->works[0]->title);
+
+        $last = $source->works('A5108007452', new Query(limit: 25, cursor: 'page:12'));
+        self::assertCount(25, $last);
+        self::assertNull($last->next, 'the 286 works end on the twelfth page of 25');
     }
 
     public function testAWorkByItsDoi(): void

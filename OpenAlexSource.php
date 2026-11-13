@@ -36,6 +36,10 @@ final class OpenAlexSource extends HttpSource
     /** The most per page OpenAlex serves. */
     public const MAX_PER_PAGE = 100;
 
+    /** How far OpenAlex's numbered pages reach (its basic paging), and how a Page's next names one. */
+    private const NUMBERED_RESULTS = 10000;
+    private const PAGE = 'page:';
+
     /** The fields a work is read from: everything else is left on the server. */
     private const WORK_FIELDS = 'id,doi,title,display_name,publication_year,publication_date,type,language,primary_location,best_oa_location,open_access,authorships,biblio,ids,cited_by_count,keywords,abstract_inverted_index,is_paratext';
 
@@ -182,17 +186,30 @@ final class OpenAlexSource extends HttpSource
             Query::RELEVANCE => null !== $search ? 'relevance_score:desc' : 'publication_date:desc',
             default => 'publication_date:desc',
         };
+        $perPage = max(1, min(self::MAX_PER_PAGE, $query->limit));
+        // Without a key OpenAlex follows a cursor through the first page only (a 401 past it, since
+        // 2026-11): the pages are then numbered (page=N, its basic paging, the first 10,000 results),
+        // and a Page's next is "page:N". With a key, or given a cursor of OpenAlex's, the cursor.
+        $numbered = (null === $this->apiKey || '' === $this->apiKey) && (null === $query->cursor || str_starts_with($query->cursor, self::PAGE));
+        $page = $numbered && null !== $query->cursor ? max(1, (int) substr($query->cursor, \strlen(self::PAGE))) : 1;
         $data = $this->call('works', [
             'filter' => implode(',', $filters),
             'search' => $search,
             'sort' => $sort,
-            'per-page' => max(1, min(self::MAX_PER_PAGE, $query->limit)),
-            'cursor' => $query->cursor ?? '*',
+            'per-page' => $perPage,
+            'page' => $numbered ? $page : null,
+            'cursor' => $numbered ? null : $query->cursor ?? '*',
             'select' => self::WORK_FIELDS,
         ]) ?? [];
         $works = array_map($this->toWork(...), $data['results'] ?? []);
+        $count = $data['meta']['count'] ?? null;
+        if ($numbered) {
+            $next = $works && $page * $perPage < min(\is_int($count) ? $count : \PHP_INT_MAX, self::NUMBERED_RESULTS) ? self::PAGE.($page + 1) : null;
+        } else {
+            $next = $works ? ($data['meta']['next_cursor'] ?? null) : null;
+        }
 
-        return new Page($works, $works ? ($data['meta']['next_cursor'] ?? null) : null, $data['meta']['count'] ?? null);
+        return new Page($works, $next, $count);
     }
 
     /** @param array<string, mixed> $query */

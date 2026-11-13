@@ -655,12 +655,6 @@ parameters:
 			path: Tests/OpenAlexSourceTest.php
 
 		-
-			message: '#^Parameter \#1 \$haystack of function str_contains expects string, array\<mixed\>\|string given\.$#'
-			identifier: argument.type
-			count: 2
-			path: Tests/OpenAlexSourceTest.php
-
-		-
 			message: '#^Parameter \#1 \$haystack of function str_contains expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 1
